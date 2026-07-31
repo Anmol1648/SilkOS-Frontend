@@ -242,17 +242,17 @@ function Section({ companyId, section, profileData, onChanged }) {
   }
   if (section.kind === 'list') {
     return <RecordListSection companyId={companyId} section={section}
-                              profileData={profileData} onChanged={onChanged} />;
+      profileData={profileData} onChanged={onChanged} />;
   }
   // Numeric/structured forms (Revenue Model, Company Metrics, Financial
   // Summary) render a validated table editor rather than a prose box.
   if (section.kind === 'structured' && STRUCTURED_SCHEMAS[section.sectionKey]) {
     return <StructuredFormSection companyId={companyId} section={section}
-                                  onChanged={onChanged} />;
+      onChanged={onChanged} />;
   }
   if (section.sectionKey === 'document_center') {
     return <DocumentCenter companyId={companyId} section={section}
-                           profileData={profileData} onChanged={onChanged} />;
+      profileData={profileData} onChanged={onChanged} />;
   }
 
   return (
@@ -452,7 +452,7 @@ function FounderCard({ companyId, founder, onRemove, onChanged }) {
   return (
     <div className="founder-card">
       {[['name', 'Name'], ['designation', 'Designation'],
-        ['linkedinUrl', 'LinkedIn'], ['education', 'Education']].map(([k, label]) => (
+      ['linkedinUrl', 'LinkedIn'], ['education', 'Education']].map(([k, label]) => (
         <label className="field" key={k}>
           <span>{label}</span>
           <input
@@ -710,7 +710,7 @@ function RecordListSection({ companyId, section, profileData, onChanged }) {
               {busy && <span className="spin" style={{ borderTopColor: '#fff' }} />}Save
             </button>
             <button className="btn btn-secondary btn-sm"
-                    onClick={() => { setDraft(section.content || ''); setEditingNotes(false); }}>
+              onClick={() => { setDraft(section.content || ''); setEditingNotes(false); }}>
               Cancel
             </button>
           </div>
@@ -728,7 +728,7 @@ function RecordListSection({ companyId, section, profileData, onChanged }) {
               </button>
             )}
             <button className="btn btn-ghost btn-sm"
-                    onClick={() => (history ? setHistory(null) : loadHistory())}>
+              onClick={() => (history ? setHistory(null) : loadHistory())}>
               {history ? 'Hide history' : 'History'}
             </button>
           </div>
@@ -769,7 +769,7 @@ function RecordCard({ companyId, sectionKey, schema, record, onRemove, onChanged
         errs[f.key] = 'Required.';
       }
       if (f.type === 'number' && draft[f.key] != null && draft[f.key] !== ''
-          && Number.isNaN(Number(draft[f.key]))) {
+        && Number.isNaN(Number(draft[f.key]))) {
         errs[f.key] = 'Enter a number.';
       }
     }
