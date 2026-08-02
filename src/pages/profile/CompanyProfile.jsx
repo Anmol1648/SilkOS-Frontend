@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
-import { profile as profileApi } from '../../api/endpoints';
+import { profile as profileApi, companies } from '../../api/endpoints';
 import { useToast, useConfirm } from '../../context/AppContext';
 import { useConfig } from '../../context/ConfigContext';
 import { AiBadge, Pill, SkeletonCard } from '../../components/ui';
@@ -687,6 +688,165 @@ function AICompanySummaryViewer({ data }) {
   );
 }
 
+function LogoUploader({ companyId, logoUrl, companyName, websiteUrl, onUpdated }) {
+  const { error: toastError, toast } = useToast();
+  const [localUrl, setLocalUrl] = useState(logoUrl);
+  const [hover, setHover] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [promptUrl, setPromptUrl] = useState('');
+
+  useEffect(() => { setLocalUrl(logoUrl); }, [logoUrl]);
+
+  useEffect(() => {
+    if (showPrompt) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showPrompt]);
+
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const b64 = ev.target.result;
+      setLocalUrl(b64);
+      try {
+        await companies.updateLogo(companyId, { logoBase64: b64 });
+        toast('Company logo updated.');
+        if (onUpdated) onUpdated();
+      } catch (err) {
+        toastError(err);
+        setLocalUrl(logoUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const openPrompt = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPromptUrl(websiteUrl ? websiteUrl.replace(/^https?:\/\//, '').split('/')[0] : '');
+    setShowPrompt(true);
+    setHover(false);
+  };
+
+  const submitPrompt = async (e) => {
+    e.preventDefault();
+    setShowPrompt(false);
+    const domain = promptUrl.trim().replace(/^https?:\/\//, '').split('/')[0];
+    if (!domain || !domain.includes('.')) {
+      toastError(new Error("Invalid domain name."));
+      return;
+    }
+    const url = `https://img.logo.dev/${domain}?token=pk_EsMpGCHZTke3dtHjuBheHA`;
+    setLocalUrl(url);
+    try {
+      await companies.updateLogo(companyId, { logoUrl: url });
+      toast('Company logo updated from website.');
+      if (onUpdated) onUpdated();
+    } catch (err) {
+      toastError(err);
+      setLocalUrl(logoUrl);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }} 
+           onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <div 
+        style={{ 
+          width: 48, height: 48, borderRadius: '8px', border: hover ? '1.5px dashed var(--mint)' : '1px solid var(--line)', 
+          overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--paper)', position: 'relative', transition: 'border-color 0.2s'
+        }}
+      >
+        {localUrl ? (
+          <>
+            <img 
+              src={localUrl} 
+              alt="" 
+              style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} 
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div 
+              style={{ 
+                width: '100%', height: '100%',
+                display: 'none', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--blue-050)', color: 'var(--blue-600)', fontSize: '20px', fontWeight: 600,
+                textTransform: 'uppercase'
+              }}
+            >
+              {companyName ? companyName.charAt(0) : '?'}
+            </div>
+          </>
+        ) : (
+          <div 
+            style={{ 
+              width: '100%', height: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--blue-050)', color: 'var(--blue-600)', fontSize: '20px', fontWeight: 600,
+              textTransform: 'uppercase'
+            }}
+          >
+            {companyName ? companyName.charAt(0) : '?'}
+          </div>
+        )}
+        {hover && !showPrompt && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-evenly' }}>
+            <label title="Upload File" style={{ cursor: 'pointer', padding: 4, display: 'flex' }}>
+              <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </label>
+            <div title="Auto-fetch from Website" style={{ cursor: 'pointer', padding: 4, display: 'flex' }} onClick={openPrompt}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Custom Modal */}
+      {showPrompt && createPortal(
+        <div 
+          onClick={(e) => { e.stopPropagation(); setShowPrompt(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, cursor: 'default' }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--card)', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: 'var(--shadow-2)' }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '8px', color: 'var(--ink)', fontSize: '18px' }}>Fetch Logo</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '14.5px', marginBottom: '24px', lineHeight: 1.5 }}>
+              Enter the company website domain to auto-fetch the logo.
+            </p>
+            <form onSubmit={submitPrompt}>
+              <input 
+                type="text" 
+                className="input-light" 
+                autoFocus
+                value={promptUrl}
+                onChange={e => setPromptUrl(e.target.value)}
+                placeholder="acme.com"
+                style={{ width: '100%', marginBottom: '24px' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                <button type="button" className="btn btn-secondary" style={{ borderRadius: '999px', padding: '8px 16px' }} onClick={() => setShowPrompt(false)}>Cancel</button>
+                <button type="submit" className="btn btn-dark" style={{ borderRadius: '999px', padding: '8px 16px' }}>Fetch Logo</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export default function CompanyProfile() {
   const { companyId } = useParams();
   const navigate = useNavigate();
@@ -768,7 +928,16 @@ export default function CompanyProfile() {
     return (
       <>
         <div className="eyebrow">Stage 1 · Company Profile</div>
-        <h1>{data.companyName}</h1>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '24px' }}>
+          <LogoUploader 
+            companyId={companyId} 
+            logoUrl={data.logoUrl} 
+            companyName={data.companyName} 
+            websiteUrl={data.websiteUrl}
+            onUpdated={() => load({ silent: true })} 
+          />
+          <h1 style={{ margin: 0 }}>{data.companyName}</h1>
+        </div>
         <OnboardingForm
           companyId={companyId}
           dealId={data.defaultDealId}
@@ -783,7 +952,16 @@ export default function CompanyProfile() {
       <div className="spread" style={{ alignItems: 'flex-start' }}>
         <div>
           <div className="eyebrow">Stage 1 · Company Profile</div>
-          <h1 style={{ marginBottom: 4 }}>{data.companyName}</h1>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: 4 }}>
+            <LogoUploader 
+              companyId={companyId} 
+              logoUrl={data.logoUrl} 
+              companyName={data.companyName} 
+              websiteUrl={data.websiteUrl}
+              onUpdated={() => load({ silent: true })} 
+            />
+            <h1 style={{ margin: 0 }}>{data.companyName}</h1>
+          </div>
           <p className="hint">
             {data.websiteUrl}
             {data.lastGeneratedAt && ` · generated ${fmtDate(data.lastGeneratedAt)}`}

@@ -24,6 +24,8 @@ export const companies = {
   create: (body) => post('/companies', body),                                    // {name, domain?, hqCountry?}
   deals: (companyId) => get(`/companies/${companyId}/deals`),
   createDeal: (companyId, body) => post(`/companies/${companyId}/deals`, body), // {name, roundType}
+  remove: (companyId) => del(`/companies/${companyId}`),                        // DELETE — cascades everything
+  updateLogo: (companyId, body) => patch(`/companies/${companyId}/logo`, body), // {logoBase64}
 };
 
 // ---- Deal navigation (M0) --------------------------------------------------

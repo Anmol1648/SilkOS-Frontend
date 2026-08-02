@@ -35,6 +35,31 @@ export default function AddCompanyModal({ onCancel, onCreated }) {
   const [busy, setBusy] = useState(false);
   const [errs, setErrs] = useState({});
 
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoBase64, setLogoBase64] = useState('');
+
+  /* ---- auto fetch logo from domain ---- */
+  useEffect(() => {
+    if (logoBase64) return; // If manually uploaded, don't overwrite
+    const domain = website.trim().replace(/^https?:\/\//, '').split('/')[0];
+    if (domain && domain.includes('.')) {
+      setLogoUrl(`https://img.logo.dev/${domain}?token=pk_EsMpGCHZTke3dtHjuBheHA`);
+    } else {
+      setLogoUrl('');
+    }
+  }, [website, logoBase64]);
+
+  function onLogoPick(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setLogoBase64(ev.target.result);
+      setLogoUrl(ev.target.result); // Use base64 as the preview
+    };
+    reader.readAsDataURL(file);
+  }
+
   useEffect(() => {
     configApi.countries()
       .then((r) => setCountries(r.items || []))
@@ -69,6 +94,8 @@ export default function AddCompanyModal({ onCancel, onCreated }) {
   function validate() {
     const next = {};
     if (!companyName.trim()) next.companyName = 'Company name is required.';
+    if (!website.trim()) next.website = 'Company website is required.';
+    if (!country) next.hqCountry = 'Headquarters country is required.';
     setErrs(next);
     return Object.keys(next).length === 0;
   }
@@ -106,6 +133,8 @@ export default function AddCompanyModal({ onCancel, onCreated }) {
       await profileApi.onboard(companyId, {
         ...(url ? { websiteUrl: url } : {}),
         ...(country ? { hqCountry: country } : {}),
+        ...(logoUrl && !logoBase64 ? { logoUrl } : {}),
+        ...(logoBase64 ? { logoBase64 } : {}),
         founders: founders
           .filter((f) => f.name.trim() || f.linkedinUrl.trim())
           .map((f) => ({
@@ -156,24 +185,45 @@ export default function AddCompanyModal({ onCancel, onCreated }) {
 
         {/* ---- Form ---- */}
         <form onSubmit={submit} className="acm-form">
-          {/* Company name */}
-          <label className="acm-field acm-field-full">
+          {/* Logo & Company name */}
+          <div className="acm-field acm-field-full">
             <span className="acm-label">Company name <span className="acm-req">*</span></span>
-            <input
-              type="text"
-              className="acm-input"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Enter company name"
-              autoFocus
-            />
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <label style={{ cursor: 'pointer', flexShrink: 0 }} title="Click to upload company logo">
+                <input type="file" accept="image/*" onChange={onLogoPick} style={{ display: 'none' }} />
+                <div style={{ 
+                  width: 42, height: 42, borderRadius: '10px', border: '1.5px dashed var(--line)', 
+                  overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--paper)', position: 'relative', transition: 'border-color 0.2s'
+                }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--mint)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--line)'}
+                >
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} 
+                         onError={(e) => { e.target.style.display = 'none'; }} />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  )}
+                </div>
+              </label>
+              <input
+                type="text"
+                className="acm-input"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Enter company name"
+                autoFocus
+                style={{ flex: 1 }}
+              />
+            </div>
             {errs.companyName && <span className="acm-error">{errs.companyName}</span>}
-          </label>
+          </div>
 
           {/* Website + Country row */}
           <div className="acm-row-2">
             <label className="acm-field">
-              <span className="acm-label">Company website</span>
+              <span className="acm-label">Company website <span className="acm-req">*</span></span>
               <div className="acm-input-icon">
                 <span className="acm-input-icon-left">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -190,9 +240,10 @@ export default function AddCompanyModal({ onCancel, onCreated }) {
                   placeholder="https://acme.com"
                 />
               </div>
+              {errs.website && <span className="acm-error">{errs.website}</span>}
             </label>
             <label className="acm-field">
-              <span className="acm-label">Headquarters country</span>
+              <span className="acm-label">Headquarters country <span className="acm-req">*</span></span>
               <div className="acm-select-wrap">
                 <select
                   className="acm-select"
@@ -208,6 +259,7 @@ export default function AddCompanyModal({ onCancel, onCreated }) {
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </div>
+              {errs.hqCountry && <span className="acm-error">{errs.hqCountry}</span>}
             </label>
           </div>
 

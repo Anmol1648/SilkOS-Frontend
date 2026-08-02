@@ -18,11 +18,13 @@ import AddCompanyModal from '../components/AddCompanyModal';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { error: toastError } = useToast();
+  const { toast, error: toastError } = useToast();
   const { brand } = useConfig();
   const [items, setItems] = useState(null);
   const [adding, setAdding] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = () => me.contexts()
     .then((res) => setItems(res.items || []))
@@ -58,6 +60,7 @@ export default function Dashboard() {
       if (it.lastRaise !== undefined) row.lastRaise = it.lastRaise;
       if (it.attachmentLinks !== undefined) row.attachmentLinks = it.attachmentLinks;
       if (it.profileComplete !== undefined) row.profileComplete = it.profileComplete;
+      if (it.logoUrl !== undefined) row.logoUrl = it.logoUrl;
     }
 
     if (it.dealId && it.scope === 'deal') row.deals.push(it);
@@ -141,7 +144,11 @@ export default function Dashboard() {
               <div className="ds-cards-count">{filteredCards.length} total</div>
               <div className="ds-cards-grid">
                 {filteredCards.map((c) => (
-                  <CompanyCard key={c.companyId || c.companyName} company={c} />
+                  <CompanyCard 
+                    key={c.companyId || c.companyName} 
+                    company={c} 
+                    onDeleteClick={() => setCompanyToDelete(c)}
+                  />
                 ))}
               </div>
             </>
@@ -155,6 +162,40 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {companyToDelete && (
+        <div 
+          onClick={(e) => { e.stopPropagation(); setCompanyToDelete(null); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, cursor: 'default' }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--card)', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: 'var(--shadow-2)' }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '8px', color: 'var(--ink)', fontSize: '18px' }}>Delete {companyToDelete.companyName}?</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '14.5px', marginBottom: '24px', lineHeight: 1.5 }}>
+              Are you sure you want to permanently delete this company? All associated workspaces, profiles, and documents will be removed. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="btn btn-secondary" disabled={deleting} onClick={() => setCompanyToDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" disabled={deleting} onClick={async () => {
+                setDeleting(true);
+                try {
+                  await companies.remove(companyToDelete.companyId);
+                  toast(`${companyToDelete.companyName} has been deleted.`);
+                  setCompanyToDelete(null);
+                  load(); // refresh dashboard
+                } catch (ex) {
+                  toastError(ex);
+                } finally {
+                  setDeleting(false);
+                }
+              }}>{deleting ? 'Deleting…' : 'Delete Company'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -165,7 +206,7 @@ export default function Dashboard() {
  * Clean white card with title, proper description, industry tags,
  * bottom row with document info + right-arrow navigate button.
  */
-function CompanyCard({ company }) {
+function CompanyCard({ company, onDeleteClick }) {
   const navigate = useNavigate();
 
   function open() {
@@ -217,8 +258,60 @@ function CompanyCard({ company }) {
     <div className="ds-company-card" onClick={open} role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') open(); }}>
       {/* Title */}
-      <div className="ds-card-header">
-        <h3 className="ds-card-title">{company.companyName}</h3>
+      <div className="ds-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {company.logoUrl ? (
+            <>
+              <img 
+                src={company.logoUrl} 
+                alt="" 
+                style={{ width: 48, height: 48, borderRadius: '8px', objectFit: 'contain', background: '#fff', border: '1px solid var(--line)' }} 
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              <div 
+                style={{ 
+                  width: 48, height: 48, borderRadius: '8px', border: '1px solid var(--line)',
+                  display: 'none', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--blue-050)', color: 'var(--blue-600)', fontSize: '20px', fontWeight: 600,
+                  textTransform: 'uppercase'
+                }}
+              >
+                {company.companyName ? company.companyName.charAt(0) : '?'}
+              </div>
+            </>
+          ) : (
+            <div 
+              style={{ 
+                width: 48, height: 48, borderRadius: '8px', border: '1px solid var(--line)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--blue-050)', color: 'var(--blue-600)', fontSize: '20px', fontWeight: 600,
+                textTransform: 'uppercase'
+              }}
+            >
+              {company.companyName ? company.companyName.charAt(0) : '?'}
+            </div>
+          )}
+          <h3 className="ds-card-title">{company.companyName}</h3>
+        </div>
+        <button 
+          className="btn btn-ghost btn-sm"
+          style={{ padding: 6, borderRadius: '8px', color: 'var(--muted)', marginTop: '-4px', marginRight: '-4px' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteClick();
+          }}
+          title="Delete Company"
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--red-600)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted)'}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
       </div>
 
       {/* Description */}

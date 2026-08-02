@@ -971,12 +971,12 @@ table.data tbody tr:hover td {
 /* -------------------------------- toasts --------------------------------- */
 .toasts {
   position: fixed;
-  bottom: 22px;
+  top: 22px;
   right: 22px;
   display: flex;
   flex-direction: column;
   gap: 9px;
-  z-index: 90;
+  z-index: 9999;
 }
 
 .toast {
