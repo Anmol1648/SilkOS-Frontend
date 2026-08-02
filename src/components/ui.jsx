@@ -163,3 +163,48 @@ export function VersionChip({ v }) {
   if (v == null) return null;
   return <span className="pill pill-grey">v{v}</span>;
 }
+
+export function Tooltip({ content, children, width = 260 }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div 
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      style={{ position: 'relative', display: 'inline-flex', width: '100%' }}
+    >
+      {children}
+      {show && content && (
+        <div style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          marginBottom: '8px',
+          background: 'var(--ink, #1f2937)',
+          color: '#fff',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '13px',
+          whiteSpace: 'normal',
+          width: width,
+          textAlign: 'center',
+          zIndex: 100,
+          pointerEvents: 'none',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          lineHeight: 1.4
+        }}>
+          {content}
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            borderWidth: '5px',
+            borderStyle: 'solid',
+            borderColor: 'var(--ink, #1f2937) transparent transparent transparent'
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}

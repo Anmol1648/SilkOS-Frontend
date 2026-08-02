@@ -64,100 +64,168 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-bg">
-      <div className="auth-brand">
+    <div className="auth-bg-light">
+      <div className="auth-brand-light">
         <div>
-          {/* The configured product name is always shown as text (QA issue
-              6: with only a logo image, a changed Product Name never
-              appeared on the login page). The mark, when set, sits above
-              it — white variant, since this panel is dark. */}
-          {(brand.logoMonoUrl || brand.logoUrl) && (
-            <img
-              src={brand.logoMonoUrl || brand.logoUrl}
-              alt={brand.productName}
-              className="brand-logo"
-              style={{ height: 34, marginBottom: 10, display: 'block' }}
-            />
-          )}
-          <div style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 600 }}>
-            {brand.productName}
-          </div>
-          <h2 style={{ marginTop: 34 }}>Every founder deserves an investment banker in their corner.</h2>
-          <div className="brand-points">
-            <div className="brand-point">
-              <span className="bp-illo"><Illo name="summit" size={44} /></span>
-              <span><strong>Know where you stand</strong><span>AI research plus your inputs become a verified knowledge base and an honest readiness score.</span></span>
-            </div>
-            <div className="brand-point">
-              <span className="bp-illo"><Illo name="scales" size={44} /></span>
-              <span><strong>Strategy, defended</strong><span>Peer benchmarks, an ideal raise, and an indicative valuation range — always ranges, never guesses.</span></span>
-            </div>
-            <div className="brand-point">
-              <span className="bp-illo"><Illo name="easel" size={44} /></span>
-              <span><strong>Materials, never from a blank page</strong><span>Story, teaser, deck, model and IM drafted from your approved strategy — you refine, you don't create.</span></span>
-            </div>
-          </div>
-        </div>
-        <p style={{ position: 'relative', fontSize: 11.5, color: 'rgba(231,241,235,.55)', maxWidth: 380 }}>
-          Guidance and drafts — not investment, legal or tax advice. Valuations are indicative ranges for discussion.
-        </p>
-        <Contours />
-      </div>
-      <div className="auth-side">
-      <div className="auth-card">
-        <div style={{ fontFamily: 'var(--display)', fontSize: 25, fontWeight: 600, marginBottom: 2, color: 'var(--green-950)' }}>
-          {step === 2 ? (mode === 'signup' ? `Welcome to ${brand.productName}` : 'Welcome back') : 'Welcome'}
-        </div>
-        <p className="hint" style={{ marginBottom: 22 }}>Your AI investment banking workspace</p>
-
-        {step === 1 ? (
-          <form onSubmit={sendCode}>
-            <div className="chips" style={{ marginBottom: 18 }}>
-              <button type="button" className={`chip ${mode === 'signin' ? 'on' : ''}`} onClick={() => setMode('signin')}>Sign in</button>
-              <button type="button" className={`chip ${mode === 'signup' ? 'on' : ''}`} onClick={() => setMode('signup')}>Create account</button>
-            </div>
-            {mode === 'signup' && (
-              <>
-                <label className="field"><span>Your name</span>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Priya Sharma" />
-                </label>
-                <label className="field"><span>Company name</span>
-                  <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme AI" />
-                </label>
-              </>
+          <div className="brand-logo-wrap">
+            {brand.logoUrl && (
+              <img
+                src={brand.logoUrl}
+                alt={brand.productName}
+              />
             )}
-            <label className="field"><span>Work email</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="founder@company.com" autoFocus />
-            </label>
-            {err && <p className="field-error">{err}</p>}
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={busy}>
-              {busy && <span className="spin" style={{ borderTopColor: '#fff' }} />} Send sign-in code
-            </button>
-            <p className="hint" style={{ marginTop: 14 }}>Passwordless — we email you a one-time code that expires in 5 minutes.</p>
-          </form>
-        ) : (
-          <form onSubmit={verify}>
-            <p style={{ fontSize: 13.5 }}>We sent a code to <strong>{email}</strong>.</p>
-            <label className="field"><span>One-time code</span>
-              <input ref={codeRef} type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={8}
-                value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                style={{ letterSpacing: 8, textAlign: 'center', fontSize: 20, fontWeight: 700 }} />
-            </label>
-            {err && <p className="field-error">{err}</p>}
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={busy}>
-              {busy && <span className="spin" style={{ borderTopColor: '#fff' }} />} Verify and sign in
-            </button>
-            <div className="spread" style={{ marginTop: 14 }}>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setStep(1); setCode(''); setErr(''); }}>
-                Use a different email
-              </button>
-              <button type="button" className="btn btn-ghost btn-sm" disabled={cooldown > 0} onClick={sendCode}>
-                {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
-              </button>
+            <span>{brand.productName}</span>
+          </div>
+          <h2>Every founder deserves<br />an investment banker<br />in their corner.</h2>
+          <p className="subtitle" style={{ fontSize: 14 }}>Guidance and drafts — not investment, legal<br />or tax advice. Valuations are indicative<br />ranges for discussion.</p>
+        </div>
+
+        <div className="brand-points-row">
+          <div className="brand-point">
+            <span className="bp-illo"><Illo name="summit" size={18} /></span>
+            <div className="brand-point-text">
+              <strong>Know where you stand</strong>
+              <span>Verified readiness score</span>
             </div>
-          </form>
-        )}
+          </div>
+          <div className="brand-point">
+            <span className="bp-illo"><Illo name="scales" size={18} /></span>
+            <div className="brand-point-text">
+              <strong>Strategy, defended</strong>
+              <span>Data-backed benchmarks</span>
+            </div>
+          </div>
+          <div className="brand-point">
+            <span className="bp-illo"><Illo name="easel" size={18} /></span>
+            <div className="brand-point-text">
+              <strong>AI-drafted Materials</strong>
+              <span>You refine, not create</span>
+            </div>
+          </div>
+        </div>
       </div>
+      <div className="auth-side-light">
+        <div className="auth-card-light">
+          <div className="auth-title">
+            Welcome
+          </div>
+          <p className="auth-subtitle">Sign in to continue to {brand.productName}</p>
+
+          {step === 1 ? (
+            <form onSubmit={sendCode}>
+              <div className="auth-tabs">
+                <button type="button" className={`auth-tab ${mode === 'signin' ? 'active' : ''}`} onClick={() => setMode('signin')}>Sign in</button>
+                <button type="button" className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => setMode('signup')}>Create account</button>
+              </div>
+
+              {mode === 'signup' && (
+                <>
+                  <label className="field-light"><span>Your name</span>
+                    <input className="input-light" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Priya Sharma" />
+                  </label>
+                  <label className="field-light"><span>Company name</span>
+                    <input className="input-light" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme AI" />
+                  </label>
+                </>
+              )}
+              <label className="field-light"><span>Email address</span>
+                <div className="input-light-group">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" ry="2"></rect><polyline points="3 7 12 13 21 7"></polyline></svg>
+                  <input className="input-light" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" autoFocus />
+                </div>
+              </label>
+
+              {err && <p className="field-error" style={{ marginBottom: 14 }}>{err}</p>}
+
+              <button className="btn-dark" disabled={busy} style={{ marginTop: 10 }}>
+                {busy && <span className="spin" style={{ borderTopColor: '#fff', width: 14, height: 14, borderWidth: 2 }} />}
+                {mode === 'signin' ? 'Sign in' : 'Create account'}
+              </button>
+
+              <p className="hint" style={{ marginTop: 24, textAlign: 'center' }}>
+                Passwordless — we email you a one-time code that expires in 5 minutes.
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={verify}>
+              <p style={{ fontSize: 14, marginBottom: 20 }}>We sent a code to <strong>{email}</strong>.</p>
+              <label className="field-light">
+                <span style={{ marginBottom: 12, display: 'block' }}>One-time code</span>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <input
+                      key={index}
+                      id={`otp-input-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      className="input-light"
+                      maxLength={2}
+                      value={code[index] || ''}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        if (!val && e.target.value) return;
+                        let char = val;
+                        if (val.length > 1) {
+                          char = val.replace(code[index] || '', '') || val[1];
+                        }
+                        char = char.slice(-1);
+                        let newCode = code.split('');
+                        newCode[index] = char;
+                        setCode(newCode.join(''));
+                        if (char && index < 5) document.getElementById(`otp-input-${index + 1}`)?.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Backspace') {
+                          e.preventDefault();
+                          if (code[index]) {
+                            let newCode = code.split('');
+                            newCode[index] = '';
+                            setCode(newCode.join(''));
+                          } else if (index > 0) {
+                            let newCode = code.split('');
+                            newCode[index - 1] = '';
+                            setCode(newCode.join(''));
+                            document.getElementById(`otp-input-${index - 1}`)?.focus();
+                          }
+                        } else if (e.key === 'ArrowLeft') {
+                          e.preventDefault();
+                          if (index > 0) document.getElementById(`otp-input-${index - 1}`)?.focus();
+                        } else if (e.key === 'ArrowRight') {
+                          e.preventDefault();
+                          if (index < 5) document.getElementById(`otp-input-${index + 1}`)?.focus();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData.getData('text/plain').replace(/\D/g, '').slice(0, 6);
+                        if (pasted) {
+                          setCode(pasted);
+                          document.getElementById(`otp-input-${Math.min(pasted.length, 5)}`)?.focus();
+                        }
+                      }}
+                      autoComplete={index === 0 ? "one-time-code" : "off"}
+                      ref={index === 0 ? codeRef : null}
+                      style={{ width: '54px', height: '60px', padding: 0, textAlign: 'center', fontSize: '24px', fontWeight: '600', borderRadius: '12px' }}
+                    />
+                  ))}
+                </div>
+              </label>
+              {err && <p className="field-error" style={{ marginBottom: 14 }}>{err}</p>}
+              <button className="btn-dark" disabled={busy}>
+                {busy && <span className="spin" style={{ borderTopColor: '#fff', width: 14, height: 14, borderWidth: 2 }} />} Verify and sign in
+              </button>
+              <div className="spread" style={{ marginTop: 20 }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setStep(1); setCode(''); setErr(''); }}>
+                  Use a different email
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" disabled={cooldown > 0} onClick={sendCode}>
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
