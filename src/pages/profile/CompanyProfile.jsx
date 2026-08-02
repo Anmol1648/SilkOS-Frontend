@@ -88,7 +88,46 @@ function CompanyOverviewViewer({ data }) {
   );
 }
 
-function FoundersViewer({ data }) {
+function PointsViewer({ data }) {
+  if (!data) return null;
+  const dataArray = Array.isArray(data) ? data : [data];
+  if (dataArray.length === 0) return null;
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {dataArray.map((item, idx) => {
+        const keys = Object.keys(item);
+        const findKey = (str) => keys.find(k => k.toLowerCase().includes(str));
+        
+        const titleKey = findKey('name') || findKey('title') || findKey('product') || findKey('advantage') || findKey('market') || findKey('customer') || keys[0];
+        const descKey = findKey('desc') || findKey('detail') || findKey('feature') || (keys.length > 1 ? keys.find(k => k !== titleKey && !k.toLowerCase().includes('category') && !k.toLowerCase().includes('type')) : null);
+        const categoryKey = findKey('category') || findKey('type');
+
+        const title = titleKey ? item[titleKey] : 'Untitled';
+        const description = descKey ? item[descKey] : '';
+        const category = categoryKey ? item[categoryKey] : '';
+
+        return (
+          <div key={idx} style={{ 
+            display: 'flex', flexDirection: 'column', gap: '6px',
+            borderLeft: '2px solid #e5e7eb', paddingLeft: '16px'
+          }}>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--ink)' }}>
+              {title} {category && <span style={{ fontWeight: 400, color: 'var(--muted)' }}>({category})</span>}
+            </span>
+            {description && (
+              <span style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.5 }}>
+                {description}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function GenericListViewer({ data }) {
   if (!data) return null;
   const dataArray = Array.isArray(data) ? data : [data];
   if (dataArray.length === 0) return null;
@@ -137,18 +176,162 @@ function FoundersViewer({ data }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {dataArray.map((founder, idx) => {
-        const numKeys = Object.keys(founder).length;
+      {dataArray.map((item, idx) => {
+        const numKeys = Object.keys(item).length;
         return (
           <div key={idx} className="cp-overview-card" style={{ padding: '24px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px' }}>
             <div className="cp-overview-grid-container">
               <div className="cp-overview-grid" style={{ gridTemplateColumns: numKeys <= 2 ? '1fr 2fr' : undefined }}>
-                {Object.entries(founder).map(([k, v]) => renderField(k, v, numKeys))}
+                {Object.entries(item).map(([k, v]) => renderField(k, v, numKeys))}
               </div>
             </div>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function FoundersViewer({ data }) {
+  const [viewMode, setViewMode] = useState('card');
+  if (!data) return null;
+  const dataArray = Array.isArray(data) ? data : [data];
+  if (dataArray.length === 0) return null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', background: '#f3f4f6', padding: 4, borderRadius: 8, gap: 4 }}>
+          <button
+            onClick={() => setViewMode('card')}
+            style={{
+              padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+              background: viewMode === 'card' ? '#fff' : 'transparent',
+              color: viewMode === 'card' ? 'var(--ink)' : 'var(--muted)',
+              border: 'none', boxShadow: viewMode === 'card' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            Card
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            style={{
+              padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+              background: viewMode === 'table' ? '#fff' : 'transparent',
+              color: viewMode === 'table' ? 'var(--ink)' : 'var(--muted)',
+              border: 'none', boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            Table
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'card' ? (
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: '12px' }}>
+          {dataArray.map((founder, idx) => {
+            const keys = Object.keys(founder);
+            const findKey = (str) => keys.find(k => k.toLowerCase().includes(str));
+            
+            const nameKey = findKey('name') || keys.find(k => k.toLowerCase() === 'founder');
+            const roleKey = findKey('role') || findKey('title') || findKey('designation');
+            const bgKey = findKey('background') || findKey('experience') || findKey('biography') || findKey('description');
+            const linkKey = findKey('linkedin') || findKey('url');
+
+            const name = nameKey ? founder[nameKey] : 'Unknown';
+            const role = roleKey ? founder[roleKey] : '';
+            const background = bgKey ? founder[bgKey] : '';
+            const linkedin = linkKey ? founder[linkKey] : '';
+
+            const initials = name !== 'Unknown' && typeof name === 'string'
+              ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+              : '?';
+
+            return (
+              <div key={idx} style={{ 
+                display: 'flex', gap: '16px', padding: '16px 20px', 
+                borderBottom: idx < dataArray.length - 1 ? '1px solid var(--line)' : 'none'
+              }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '50%', background: '#e5e7eb',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  fontSize: '15px', fontWeight: 500, color: 'var(--ink)'
+                }}>
+                  {initials}
+                </div>
+                
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 500, color: 'var(--ink)' }}>{name}</span>
+                    {linkedin && typeof linkedin === 'string' && (
+                      <a href={linkedin.startsWith('http') ? linkedin : `https://${linkedin}`} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>
+                      </a>
+                    )}
+                  </div>
+                  
+                  {role && (
+                    <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                      {role}
+                    </div>
+                  )}
+                  
+                  {background && (
+                    <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '4px', lineHeight: 1.4 }}>
+                      {background}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#f9fafb', borderBottom: '1px solid var(--line)' }}>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Name</th>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Role</th>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Background</th>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Links</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dataArray.map((founder, idx) => {
+                const keys = Object.keys(founder);
+                const findKey = (str) => keys.find(k => k.toLowerCase().includes(str));
+                const nameKey = findKey('name') || keys.find(k => k.toLowerCase() === 'founder');
+                const roleKey = findKey('role') || findKey('title') || findKey('designation');
+                const bgKey = findKey('background') || findKey('experience') || findKey('biography') || findKey('description');
+                const linkKey = findKey('linkedin') || findKey('url');
+
+                const name = nameKey ? founder[nameKey] : 'Unknown';
+                const role = roleKey ? founder[roleKey] : '';
+                const background = bgKey ? founder[bgKey] : '';
+                const linkedin = linkKey ? founder[linkKey] : '';
+
+                return (
+                  <tr key={idx} style={{ borderBottom: idx < dataArray.length - 1 ? '1px solid var(--line)' : 'none' }}>
+                    <td style={{ padding: '16px', fontSize: 14, color: 'var(--ink)' }}>{name}</td>
+                    <td style={{ padding: '16px', fontSize: 14, color: 'var(--muted)' }}>{role}</td>
+                    <td style={{ padding: '16px', fontSize: 14, color: 'var(--muted)' }}>{background}</td>
+                    <td style={{ padding: '16px', fontSize: 14 }}>
+                      {linkedin && typeof linkedin === 'string' && (
+                        <a href={linkedin.startsWith('http') ? linkedin : `https://${linkedin}`} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none' }}>
+                          LinkedIn
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -189,7 +372,7 @@ function RevenueModelViewer({ data }) {
         {data.map((item, idx) => {
           const val = Number(item.share_percent || item.SharePercent || 0);
           return (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: colors[idx % colors.length], flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500, lineHeight: 1.2, marginBottom: '2px' }}>{item.stream || 'Unknown Stream'}</span>
@@ -207,18 +390,23 @@ function CompanyMetricsViewer({ data }) {
   if (!data || !Array.isArray(data) || data.length === 0) return null;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`, background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
       {data.map((item, idx) => (
-        <div key={idx} className="cp-overview-card" style={{ padding: '24px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '36px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>{item.value}</span>
-            {item.unit && item.unit !== '#' && (
-              <span style={{ fontSize: '16px', color: 'var(--muted)', fontWeight: 600 }}>{item.unit}</span>
-            )}
-          </div>
-          <span style={{ fontSize: '14px', color: 'var(--muted)', fontWeight: 500 }}>
+        <div key={idx} style={{ 
+          padding: '24px 32px', 
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          borderRight: idx < data.length - 1 ? '1px solid var(--line)' : 'none',
+          borderBottom: 'none' // You might need media queries for wrapping, but flex-wrap/grid handles it nicely.
+        }}>
+          <span style={{ fontSize: '14px', color: 'var(--muted)', fontWeight: 600, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {item.metric}
           </span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '40px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>{item.value}</span>
+            {item.unit && item.unit !== '#' && (
+              <span style={{ fontSize: '16px', color: 'var(--muted)', fontWeight: 500 }}>{item.unit}</span>
+            )}
+          </div>
         </div>
       ))}
     </div>
@@ -309,15 +497,15 @@ function FundingHistoryViewer({ data }) {
           ))}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: '#f3f4f6' }}>
-                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)', borderRadius: '8px 0 0 8px' }}>Date</th>
+              <tr style={{ background: '#f9fafb', borderBottom: '1px solid var(--line)' }}>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Date</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Round</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Funds Raised</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Status</th>
-                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)', borderRadius: '0 8px 8px 0' }}>Investors</th>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Investors</th>
               </tr>
             </thead>
             <tbody>
@@ -413,14 +601,14 @@ function FinancialSummaryViewer({ data }) {
           ))}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: '#f3f4f6' }}>
-                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)', borderRadius: '8px 0 0 8px' }}>Year</th>
+              <tr style={{ background: '#f9fafb', borderBottom: '1px solid var(--line)' }}>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Year</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Revenue</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>EBITDA</th>
-                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)', borderRadius: '0 8px 8px 0' }}>Growth</th>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Growth</th>
               </tr>
             </thead>
             <tbody>
@@ -548,16 +736,16 @@ function CompetitorsViewer({ data }) {
           ))}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: '#f3f4f6' }}>
-                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)', borderRadius: '8px 0 0 8px' }}>Competitor</th>
+              <tr style={{ background: '#f9fafb', borderBottom: '1px solid var(--line)' }}>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Competitor</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>FY Year</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Revenue</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Funds</th>
                 <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Status</th>
-                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)', borderRadius: '0 8px 8px 0' }}>Investors</th>
+                <th style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Investors</th>
               </tr>
             </thead>
             <tbody>
@@ -1285,8 +1473,12 @@ function Section({ companyId, section, profileData, onChanged }) {
                 <RecentNewsViewer data={section.data} />
               ) : section.sectionKey === 'ai_company_summary' ? (
                 <AICompanySummaryViewer data={section.data} />
-              ) : (section.sectionKey === 'founders' || section.sectionKey === 'key_people' || section.sectionKey === 'products_services' || section.sectionKey === 'customers_markets' || section.sectionKey === 'competitive_advantages' || section.sectionKey === 'business_model') ? (
+              ) : (section.sectionKey === 'founders' || section.sectionKey === 'key_people') ? (
                 <FoundersViewer data={section.data} />
+              ) : (section.sectionKey === 'products_services' || section.sectionKey === 'customers_markets' || section.sectionKey === 'competitive_advantages') ? (
+                <PointsViewer data={section.data} />
+              ) : section.sectionKey === 'business_model' ? (
+                <GenericListViewer data={section.data} />
               ) : (
                 <DataViewer data={section.data} sectionKey={section.sectionKey} editing={false} />
               )}
