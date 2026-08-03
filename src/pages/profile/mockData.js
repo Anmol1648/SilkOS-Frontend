@@ -6,7 +6,6 @@ export const mockProfileData = {
     macro_sector: "Healthcare",
     sub_sector: "HealthTech",
     funding_status_name: "Private (Independently Owned)",
-    employee_strength_name: "250-500",
     revenue_size_name: "$25M-$50M annually",
     currency_id: "USD"
   },

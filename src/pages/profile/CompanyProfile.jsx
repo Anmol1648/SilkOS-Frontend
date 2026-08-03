@@ -28,7 +28,6 @@ function CompanyOverviewViewer({ data }) {
     macro_sector: <svg {...iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01" /><path d="M16 6h.01" /><path d="M12 6h.01" /><path d="M12 10h.01" /><path d="M12 14h.01" /><path d="M16 10h.01" /><path d="M16 14h.01" /><path d="M8 10h.01" /><path d="M8 14h.01" /></svg>,
     sub_sector: <svg {...iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>,
     funding_status_name: <svg {...iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10" /><path d="M17 4v8a5 5 0 0 1-10 0V4" /><path d="M7 6H3v3a5 5 0 0 0 5 5h1" /><path d="M17 6h4v3a5 5 0 0 1-5 5h-1" /></svg>,
-    employee_strength_name: <svg {...iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
     revenue_size_name: <svg {...iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
     currency_id: <svg {...iconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="3" x2="18" y2="3" /><line x1="6" y1="8" x2="18" y2="8" /><path d="M14.5 3a5.5 5.5 0 0 1-1 11H6" /><path d="M6 14l8 8" /></svg>,
   };
@@ -1035,6 +1034,78 @@ function LogoUploader({ companyId, logoUrl, companyName, websiteUrl, onUpdated }
   );
 }
 
+function ProfileAssistant({ companyId, aiMocked, onGenerated }) {
+  const { toast, error: toastError } = useToast();
+  const [busy, setBusy] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState(null);
+  const [asking, setAsking] = useState(false);
+
+  const runDeep = async () => {
+    setBusy(true);
+    try {
+      const res = await profileApi.deepGenerate(companyId);
+      const missing = (res && res.missing && res.missing.length) || 0;
+      toast(missing
+        ? `Deep research complete. ${missing} field(s) need your review.`
+        : 'Deep research complete.');
+      onGenerated && onGenerated();
+    } catch (e) { toastError(e); } finally { setBusy(false); }
+  };
+
+  const ask = async () => {
+    const q = question.trim();
+    if (!q) return;
+    setAsking(true); setAnswer(null);
+    try {
+      const res = await profileApi.ask(companyId, q);
+      setAnswer(res);
+    } catch (e) { toastError(e); } finally { setAsking(false); }
+  };
+
+  return (
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <strong>Exhaustive research</strong>
+          <div className="hint">Pull funding, cap table, financials, market sizing, thesis and competitors in one pass (uses the Advanced web-search model).</div>
+        </div>
+        <button className="btn" onClick={runDeep} disabled={busy}>
+          {busy && <span className="spin" />}{busy ? 'Researching…' : 'Generate full profile'}
+        </button>
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') ask(); }}
+            placeholder="Ask a question about this company…"
+            style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 8 }}
+          />
+          <button className="btn secondary" onClick={ask} disabled={asking || !question.trim()}>
+            {asking && <span className="spin" />}Ask
+          </button>
+        </div>
+        {aiMocked && <div className="hint" style={{ marginTop: 6 }}>AI is in mock mode — answers are placeholders until a live model is connected.</div>}
+        {answer && (
+          <div style={{ marginTop: 10, padding: 12, background: '#f9fafb', border: '1px solid var(--line)', borderRadius: 8 }}>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{answer.answer || answer.detail || '—'}</div>
+            {answer.answered === false && answer.missing && answer.missing.length > 0 && (
+              <div className="hint" style={{ marginTop: 6 }}>Not in the profile yet: {answer.missing.join(', ')}</div>
+            )}
+            {answer.citations && answer.citations.length > 0 && (
+              <div className="hint" style={{ marginTop: 6 }}>Sources: {answer.citations.join(', ')}</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CompanyProfile() {
   const { companyId } = useParams();
   const navigate = useNavigate();
@@ -1085,6 +1156,13 @@ export default function CompanyProfile() {
     competitors: 'Competitors',
     recent_news: 'Recent News',
     ai_company_summary: 'AI Company Summary',
+    cap_table: 'Cap Table & Investors',
+    company_story: 'Company Story & USP',
+    market_research: 'Industry & Market Research',
+    investment_thesis: 'Investment Thesis',
+    leadership_detail: 'Leadership (CFO, Founders, CEO)',
+    competitors_detail: 'Competitor Detail',
+    derived_multiples: 'Derived Multiples (computed)',
   };
 
   const SECTION_ORDER = Object.keys(SECTION_LABELS);
@@ -1157,6 +1235,12 @@ export default function CompanyProfile() {
         </div>
         <ProfileStatus data={data} companyId={companyId} onChange={load} />
       </div>
+
+      <ProfileAssistant
+        companyId={companyId}
+        aiMocked={data.aiMocked}
+        onGenerated={() => load({ silent: true })}
+      />
 
       {data.status === 'generating' && (
         <div className="card generating-banner">

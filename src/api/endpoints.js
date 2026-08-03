@@ -150,6 +150,8 @@ export const profile = {
   read: (c) => get(`/companies/${c}/profile`),
   onboard: (c, body) => post(`/companies/${c}/profile/onboard`, body, { idempotent: true }),
   confirmReview: (c) => post(`/companies/${c}/profile/review`, {}),
+  deepGenerate: (c) => post(`/companies/${c}/profile/deep-generate`, {}, { idempotent: true }),
+  ask: (c, question) => post(`/companies/${c}/profile/qa`, { question }),
   saveSection: (c, key, body) =>
     patch(`/companies/${c}/profile/sections/${encodeURIComponent(key)}`, body),
   regenerateSection: (c, key, force = false) =>
